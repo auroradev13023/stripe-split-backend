@@ -1,4 +1,9 @@
 {
+  "name": "stripe-split-backend",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev"
+  },
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
