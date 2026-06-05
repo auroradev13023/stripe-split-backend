@@ -1,13 +1,1 @@
-{
-  "version": 2,
-  "rewrites": [
-    {
-      "source": "/create-checkout-session",
-      "destination": "/api/create-checkout-session"
-    },
-    {
-      "source": "/wehbook",
-      "destination": "/api/wehbook"
-    }
-  ]
-}
+{}
