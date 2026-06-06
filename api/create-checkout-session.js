@@ -2,6 +2,24 @@ const Stripe = require('stripe');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+function formatEuro(cents) {
+  return `€${(cents / 100).toFixed(2)}`;
+}
+
+function logSplitConfig({ totalCents, applicationFee, destination }) {
+  const kateShare = totalCents - applicationFee;
+
+  console.log('SPLIT CONFIGURATION');
+  console.log('Total charge:', formatEuro(totalCents));
+  console.log('Platform fee (Iryna):', formatEuro(applicationFee));
+  console.log('Kate transfer:', formatEuro(kateShare));
+  console.log(
+    'Split ratio:',
+    `${((applicationFee / totalCents) * 100).toFixed(0)}% platform / ${((kateShare / totalCents) * 100).toFixed(0)}% Kate`
+  );
+  console.log('Kate account:', destination);
+}
+
 function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -45,6 +63,13 @@ module.exports = async (req, res) => {
       });
     }
 
+    const price = await stripe.prices.retrieve(priceId);
+    logSplitConfig({
+      totalCents: price.unit_amount,
+      applicationFee,
+      destination: process.env.KATE_ACCOUNT_ID,
+    });
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
 
@@ -73,7 +98,8 @@ module.exports = async (req, res) => {
     console.log('Checkout Session Created');
     console.log('Session ID:', session.id);
     console.log('Session URL:', session.url);
-    console.log('Kate Account:', process.env.KATE_ACCOUNT_ID);
+    console.log('Payment Intent:', session.payment_intent || 'pending');
+    console.log('Amount total:', session.amount_total ? formatEuro(session.amount_total) : formatEuro(price.unit_amount));
     console.log('====================================');
 
     return res.status(200).json({
