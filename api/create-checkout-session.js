@@ -1,17 +1,26 @@
-const express = require('express');
 const Stripe = require('stripe');
-const cors = require('cors');
-
-const app = express();
-
-app.use(cors());
-app.use(express.json());
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-app.post('/', async (req, res) => {
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+module.exports = async (req, res) => {
+  setCors(res);
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
-    const { plan } = req.body;
+    const { plan } = req.body || {};
 
     console.log('====================================');
     console.log('NEW CHECKOUT REQUEST');
@@ -21,12 +30,10 @@ app.post('/', async (req, res) => {
     let priceId;
     let applicationFee;
 
-    if (plan === '150') {
+    if (String(plan) === '150') {
       priceId = process.env.PRICE_150;
       applicationFee = 6000; // €60.00
-    }
-
-    if (plan === '350') {
+    } else if (String(plan) === '350') {
       priceId = process.env.PRICE_350;
       applicationFee = 14000; // €140.00
     }
@@ -69,7 +76,7 @@ app.post('/', async (req, res) => {
     console.log('Kate Account:', process.env.KATE_ACCOUNT_ID);
     console.log('====================================');
 
-    return res.json({
+    return res.status(200).json({
       url: session.url,
     });
   } catch (error) {
@@ -80,6 +87,4 @@ app.post('/', async (req, res) => {
       error: error.message,
     });
   }
-});
-
-module.exports = app;
+};
