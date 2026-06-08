@@ -89,10 +89,10 @@ module.exports = async (req, res) => {
       },
 
       success_url:
-        `${process.env.FRONTEND_URL}/tariffs-backup`,
+        `${process.env.FRONTEND_URL}tariffs-backup`,
 
       cancel_url:
-        `${process.env.FRONTEND_URL}/tariffs-backup`,
+        `${process.env.FRONTEND_URL}tariffs-backup`,
     });
 
     console.log('Checkout Session Created');
