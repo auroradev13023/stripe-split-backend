@@ -50,10 +50,10 @@ module.exports = async (req, res) => {
 
     if (String(plan) === '150') {
       priceId = process.env.PRICE_150;
-      applicationFee = 6512.5; // €60.00
+      applicationFee = 6512; // €60.00
     } else if (String(plan) === '350') {
       priceId = process.env.PRICE_350;
-      applicationFee = 15162.5; // €140.00
+      applicationFee = 15162; // €140.00
     }
 
     if (!priceId) {
