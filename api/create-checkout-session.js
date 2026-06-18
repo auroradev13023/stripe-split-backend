@@ -1,7 +1,6 @@
 const Stripe = require('stripe');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const TEST_CHECKOUT_AMOUNT_CENTS = 100;
 
 function formatEuro(cents) {
   return `€${(cents / 100).toFixed(2)}`;
@@ -52,11 +51,11 @@ module.exports = async (req, res) => {
     if (String(plan) === '150') {
       priceId = process.env.PRICE_150;
       // applicationFee = 6513; // €60.00
-      applicationFee = 65;
+      applicationFee = 44;
     } else if (String(plan) === '350') {
       priceId = process.env.PRICE_350;
       // applicationFee = 15163; // €140.00
-      applicationFee = 65;
+      applicationFee = 44;
     }
 
     if (!priceId) {
@@ -66,8 +65,9 @@ module.exports = async (req, res) => {
       });
     }
 
+    const price = await stripe.prices.retrieve(priceId);
     logSplitConfig({
-      totalCents: TEST_CHECKOUT_AMOUNT_CENTS,
+      totalCents: price.unit_amount,
       applicationFee,
       destination: process.env.KATE_ACCOUNT_ID,
     });
@@ -77,13 +77,7 @@ module.exports = async (req, res) => {
 
       line_items: [
         {
-          price_data: {
-            currency: 'eur',
-            unit_amount: TEST_CHECKOUT_AMOUNT_CENTS,
-            product_data: {
-              name: `Test payment for ${plan} plan`,
-            },
-          },
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -107,7 +101,7 @@ module.exports = async (req, res) => {
     console.log('Session ID:', session.id);
     console.log('Session URL:', session.url);
     console.log('Payment Intent:', session.payment_intent || 'pending');
-    console.log('Amount total:', session.amount_total ? formatEuro(session.amount_total) : formatEuro(TEST_CHECKOUT_AMOUNT_CENTS));
+    console.log('Amount total:', session.amount_total ? formatEuro(session.amount_total) : formatEuro(price.unit_amount));
     console.log('====================================');
 
     return res.status(200).json({

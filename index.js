@@ -4,7 +4,6 @@ const cors = require('cors');
 
 const app = express();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const TEST_CHECKOUT_AMOUNT_CENTS = 100;
 
 app.use(cors());
 app.use(express.json());
@@ -23,12 +22,12 @@ app.post('/create-checkout-session', async (req, res) => {
 
     if (plan === '150') {
       priceId = process.env.PRICE_150;
-      applicationFee = 44;
+      applicationFee = 6000; // €60.00
     }
 
     if (plan === '350') {
       priceId = process.env.PRICE_350;
-      applicationFee = 44;
+      applicationFee = 14000; // €140.00
     }
 
     if (!priceId) {
@@ -43,13 +42,7 @@ app.post('/create-checkout-session', async (req, res) => {
 
       line_items: [
         {
-          price_data: {
-            currency: 'eur',
-            unit_amount: TEST_CHECKOUT_AMOUNT_CENTS,
-            product_data: {
-              name: `Test payment for ${plan} plan`,
-            },
-          },
+          price: priceId,
           quantity: 1,
         },
       ],
