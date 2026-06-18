@@ -52,11 +52,11 @@ module.exports = async (req, res) => {
     if (String(plan) === '150') {
       priceId = process.env.PRICE_150;
       // applicationFee = 6513; // €60.00
-      applicationFee = 44;
+      applicationFee = 65;
     } else if (String(plan) === '350') {
       priceId = process.env.PRICE_350;
       // applicationFee = 15163; // €140.00
-      applicationFee = 44;
+      applicationFee = 65;
     }
 
     if (!priceId) {
