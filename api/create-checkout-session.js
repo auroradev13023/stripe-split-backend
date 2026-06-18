@@ -1,6 +1,7 @@
 const Stripe = require('stripe');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const TEST_CHECKOUT_AMOUNT_CENTS = 100;
 
 function formatEuro(cents) {
   return `€${(cents / 100).toFixed(2)}`;
@@ -65,9 +66,8 @@ module.exports = async (req, res) => {
       });
     }
 
-    const price = await stripe.prices.retrieve(priceId);
     logSplitConfig({
-      totalCents: price.unit_amount,
+      totalCents: TEST_CHECKOUT_AMOUNT_CENTS,
       applicationFee,
       destination: process.env.KATE_ACCOUNT_ID,
     });
@@ -77,7 +77,13 @@ module.exports = async (req, res) => {
 
       line_items: [
         {
-          price: priceId,
+          price_data: {
+            currency: 'eur',
+            unit_amount: TEST_CHECKOUT_AMOUNT_CENTS,
+            product_data: {
+              name: `Test payment for ${plan} plan`,
+            },
+          },
           quantity: 1,
         },
       ],
@@ -101,7 +107,7 @@ module.exports = async (req, res) => {
     console.log('Session ID:', session.id);
     console.log('Session URL:', session.url);
     console.log('Payment Intent:', session.payment_intent || 'pending');
-    console.log('Amount total:', session.amount_total ? formatEuro(session.amount_total) : formatEuro(price.unit_amount));
+    console.log('Amount total:', session.amount_total ? formatEuro(session.amount_total) : formatEuro(TEST_CHECKOUT_AMOUNT_CENTS));
     console.log('====================================');
 
     return res.status(200).json({
