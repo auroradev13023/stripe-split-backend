@@ -5,6 +5,21 @@ const cors = require('cors');
 const app = express();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+const TVA_DESCRIPTION = 'TVA non applicable, art. 293 B du CGI';
+
+const PLANS = {
+  '150': {
+    unitAmount: 15000,
+    applicationFee: 6513,
+    productName: '150€ TTC',
+  },
+  '350': {
+    unitAmount: 35000,
+    applicationFee: 15163,
+    productName: '350€ TTC',
+  },
+};
+
 app.use(cors());
 app.use(express.json());
 
@@ -17,32 +32,30 @@ app.post('/create-checkout-session', async (req, res) => {
     console.log('Selected Plan:', plan);
     console.log('Time:', new Date().toISOString());
 
-    let priceId;
-    let applicationFee;
+    const selectedPlan = PLANS[String(plan)];
 
-    if (plan === '150') {
-      priceId = process.env.PRICE_150;
-      applicationFee = 6000; // €60.00
-    }
-
-    if (plan === '350') {
-      priceId = process.env.PRICE_350;
-      applicationFee = 14000; // €140.00
-    }
-
-    if (!priceId) {
+    if (!selectedPlan) {
       console.log('Invalid Plan');
       return res.status(400).json({
         error: 'Invalid Plan',
       });
     }
 
+    const { unitAmount, applicationFee, productName } = selectedPlan;
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
 
       line_items: [
         {
-          price: priceId,
+          price_data: {
+            currency: 'eur',
+            unit_amount: unitAmount,
+            product_data: {
+              name: productName,
+              description: TVA_DESCRIPTION,
+            },
+          },
           quantity: 1,
         },
       ],

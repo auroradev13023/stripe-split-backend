@@ -2,6 +2,21 @@ const Stripe = require('stripe');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+const TVA_DESCRIPTION = 'TVA non applicable, art. 293 B du CGI';
+
+const PLANS = {
+  '150': {
+    unitAmount: 15000,
+    applicationFee: 6513, // €60.00
+    productName: '150€ TTC',
+  },
+  '350': {
+    unitAmount: 35000,
+    applicationFee: 15163, // €140.00
+    productName: '350€ TTC',
+  },
+};
+
 function formatEuro(cents) {
   return `€${(cents / 100).toFixed(2)}`;
 }
@@ -45,27 +60,19 @@ module.exports = async (req, res) => {
     console.log('Selected Plan:', plan);
     console.log('Time:', new Date().toISOString());
 
-    let priceId;
-    let applicationFee;
+    const selectedPlan = PLANS[String(plan)];
 
-    if (String(plan) === '150') {
-      priceId = process.env.PRICE_150;
-      applicationFee = 6513; // €60.00
-    } else if (String(plan) === '350') {
-      priceId = process.env.PRICE_350;
-      applicationFee = 15163; // €140.00
-    }
-
-    if (!priceId) {
+    if (!selectedPlan) {
       console.log('Invalid Plan');
       return res.status(400).json({
         error: 'Invalid Plan',
       });
     }
 
-    const price = await stripe.prices.retrieve(priceId);
+    const { unitAmount, applicationFee, productName } = selectedPlan;
+
     logSplitConfig({
-      totalCents: price.unit_amount,
+      totalCents: unitAmount,
       applicationFee,
       destination: process.env.KATE_ACCOUNT_ID,
     });
@@ -75,7 +82,14 @@ module.exports = async (req, res) => {
 
       line_items: [
         {
-          price: priceId,
+          price_data: {
+            currency: 'eur',
+            unit_amount: unitAmount,
+            product_data: {
+              name: productName,
+              description: TVA_DESCRIPTION,
+            },
+          },
           quantity: 1,
         },
       ],
@@ -99,7 +113,7 @@ module.exports = async (req, res) => {
     console.log('Session ID:', session.id);
     console.log('Session URL:', session.url);
     console.log('Payment Intent:', session.payment_intent || 'pending');
-    console.log('Amount total:', session.amount_total ? formatEuro(session.amount_total) : formatEuro(price.unit_amount));
+    console.log('Amount total:', session.amount_total ? formatEuro(session.amount_total) : formatEuro(unitAmount));
     console.log('====================================');
 
     return res.status(200).json({
